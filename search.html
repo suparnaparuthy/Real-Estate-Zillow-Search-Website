@@ -1,0 +1,933 @@
+<!doctype html>
+<head>
+<!--
+<BODY>
+This is for USC disclaimer
+</BODY>
+-->
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<script src="http://code.jquery.com/jquery-1.10.2.js" > </script>
+<script
+ src="http://jqueryvalidation.org/files/dist/jquery.validate.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+
+<style>
+body
+{
+background-image: url("back_img.jpg");
+}
+
+label, #searchprop, a
+{
+color: #FF6600;
+}
+
+
+#submit
+{
+background-color: #FF6600;
+color: white;
+border-radius: 5px;
+}
+
+hr
+{
+color: #FFFFFF;
+}
+
+#nomatch
+{
+color: red;
+
+}
+
+table>div.myerrors, #streeterror, #stateerror, #cityerror
+{
+  color: #FF0000;
+}
+
+.l1
+{
+text-align: right;
+}
+
+footer
+{
+ text-align: center;
+}
+
+#basic, #historical
+{
+   background-color: white;
+   border-style: ridge;
+    border-width: medium;
+    border-color: white;
+
+    box-shadow: 1px 1px 5px #FF6600;
+}
+
+#b, #h
+{
+  background-color: #FF6600;
+  color: white;
+  border-radius: 3px;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    color: black;
+    background-color: #FFFFFF;
+}
+
+.nav-tabs>li>a {
+    color: #FFFFFF;
+    background-color: #FF6600;
+}
+
+.carousel-caption{
+
+ top: auto;
+ bottom: 0;
+
+}
+
+
+#myform input.error, select.error
+{
+  border: 1px solid red;
+}
+
+
+@media (max-width: 767px) {
+.carousel-inner > .item > img {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  
+
+ } 
+}
+
+
+@media (max-width: 767px) {.carousel-caption {position: absolute;}}
+ .carousel-caption {top: auto;position: absolute;right: 0;bottom: 0;left: 0;padding: 15px;background: #333333;background: rgba(0, 0, 0, 0.5);text-align:left;}
+ .carousel-indicators{bottom: 35px; text-align: right; color: #FF6600;}
+
+
+</style>
+
+
+<script>
+$().ready(function() {
+
+ jQuery.validator.setDefaults({
+  errorPlacement: function(error, element) {
+
+      if (element.attr("name") == "street") {
+
+          $("#streeterror").html( error ); 
+
+         }
+      
+      else if (element.attr("name") == "city") {
+
+          $("#cityerror").html( error );  
+
+         }
+
+      else if (element.attr("name") == "state") {
+
+          $("#stateerror").html( error );  
+
+         }  
+
+      else {
+         error.insertAfter(element);
+
+     }
+
+     }
+ });
+
+$("#myform").validate({
+   rules: {
+     
+    street: "required",
+    
+
+    city: "required",
+     
+    state: "required"
+     
+  },
+   
+      messages: {
+          street:{
+           required: "This field is required."
+          },
+
+         city:{
+          required: "This field is required."
+          
+          },
+
+         state:{
+          required: "This field is required."
+          }
+        },
+         
+        submitHandler: function(){
+
+           $.ajax({
+            url: 'http://appnov-env.elasticbeanstalk.com/',
+            data: { streetInput: $("#street").val(),
+            cityInput: $("#city").val(),
+            stateInput: $("#state").val() },
+            type: 'POST',
+            success: function(output) {
+
+           output = JSON.parse(output);
+           $("#jsondata").val(JSON.stringify(output));
+
+          var retcode = output.retcode;
+          retcode = parseInt(retcode);
+        
+
+
+if ( retcode != 0 )
+{
+  html_text = "<br/><center><h3 style='color:red;'>No exact match found -- Verify that the given address is correct.</h3></center>";
+}
+
+else
+{
+
+
+           var html_text;
+
+           html_text = "<ul class='nav nav-tabs' role='tablist'>";
+           html_text+=  "<li role='presentation' class='active' id='b'><a href='#basic' role='tab' data-toggle='tab'>Basic Info</a></li>";
+           html_text+= "<li role='presentation' id='h' ><a href='#historical' role='tab' data-toggle='tab'>Historical Zestimates</a></li></ul>";
+ 
+
+
+          html_text+= "<div class='tab-content'>";
+          html_text+= "<div role='tabpanel' class='tab-pane active' id='basic'>";
+
+
+street = output.street;
+city = output.city;
+state = output.state;
+zipCode = output.zipcode;
+homeLink = output.homedetails;
+ 
+html_text = html_text + "<br/><div class='table-responsive'><table id='results' class='table table-striped'><tr><td colspan='3'>See more details for  &nbsp; <a href='"+homeLink+"'>"+street+", "+city+", "+state+"-"+zipCode+" </a> on Zillow</td>";
+
+html_text = html_text+"<td class='l1'><a id='fbshare' href='javascript:fb_post()'><img src='http://static.excelined.org/wp-content/uploads/Share-on-Facebook.png' width='150' height='30'/></a> </td></tr>";
+
+
+html_text = html_text+"<br/><tr><td>Property Type:</td>";
+if(!(output.type))
+{ 
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+type = output.type;
+
+if((type == ""))
+{
+  html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+type+"</td>";
+}
+
+}
+
+
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Last Sold Price:</td>";
+if(!(output.price))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+else
+{
+price = output.price;
+if((price == "") || (price == "$0.00"))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+price+"</td></tr>";
+}
+}
+
+
+html_text = html_text+"<tr><td>Year Built:</td>";
+if(!(output.year))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+else
+{
+year = output.year;
+
+ if( (year == ""))
+ {
+ html_text = html_text+"<td class='l1'>N/A</td>";
+ }
+
+ else
+ {
+ html_text = html_text+"<td class='l1'>"+year+"</td>";
+ }
+
+}
+
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Last Sold Date:</td>";
+if(!(output.soldDate))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+else
+{
+ soldDate = output.soldDate;
+
+if((soldDate == "") || soldDate == "01-Jan-1970")
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+
+ html_text = html_text+"<td class='l1'>"+soldDate+"</td></tr>";
+}
+
+}
+
+html_text = html_text+"<tr><td>Lot Size:</td>";
+if(!(output.lot))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+else
+{
+ lot = output.lot;
+
+if( (lot == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+lot+" sq.ft.</td>";
+}
+}
+
+if(output.dat1 == "")
+{
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Zestimate <sup>&reg;</sup> Property Estimate as of N/A:</td>";
+}
+
+else
+{
+ dat1 = output.dat1;
+
+
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Zestimate <sup>&reg;</sup> Property Estimate as of "+dat1+":</td>";
+}
+
+if(!(output.amt))
+{
+ 
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ amt = output.amt;
+
+if((amt == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+amt+"</td></tr>";
+}
+}
+
+
+html_text = html_text+"<tr><td>Finished Area:</td>";
+if(!(output.finArea))
+{ 
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{ 
+ finArea = output.finArea;
+
+if((finArea == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+finArea+" sq.ft.</td>";
+}
+}
+
+if(!(output.val))
+{
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Overall Change:</td>";
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+val = output.val;
+
+if( (val == ""))
+{
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Overall Change:</td>";
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+  neg = output.negzestimg;
+
+ if(parseInt(neg) == 1)
+ {
+  imgn = output.imgn;
+
+  html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Overall Change:<img src='"+imgn+"/></td><td class='l1'>"+val+"</td></tr>";
+ }
+ else if(parseInt(neg) == 0)
+  {
+  imgp = output.imgp;
+
+   html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Overall Change:<img src='"+imgp+"'/></td><td class='l1'>"+val+"</td></tr>"; 
+  }
+}
+}
+
+
+html_text = html_text+"<tr><td>Bathrooms:</td>";
+if(!(output.bath))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+ 
+else
+{
+bath = output.bath;
+
+if( (bath == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+bath+"</td>";
+}
+}
+
+
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;All Time Property Range:</td>";
+if(!(output.low1))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+
+low1 = output.low1;
+high1 = output.high1;
+
+if( (low1 == "") || (high1 == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+low1+" - "+high1+"</td></tr>";
+}
+}
+
+
+html_text = html_text+"<tr><td>Bedrooms:</td>";
+if(!(output.bed))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ 
+bed = output.bed;
+
+if( (bed == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+bed+"</td>";
+}
+}
+
+
+if(output.dat2 == "")
+{
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Rent Zestimate <sup>&reg;</sup> Rent Valuation as of N/A:</td>";
+}
+
+else
+{
+dat2 = output.dat2;
+
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;Rent Zestimate <sup>&reg;</sup> Rent Valuation as of "+dat2+":</td>";
+}
+
+ 
+if(!(output.rentamt))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ 
+rentamt = output.rentamt;
+
+if((rentamt == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+rentamt+"</td></tr>";
+}
+}
+
+
+html_text = html_text+"<tr><td>Tax Assessment Year:</td>";
+if(!(output.assYear))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ 
+assYear = output.assYear;
+
+if( (assYear == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+assYear+"</td>";
+}
+}
+
+
+if(!(output.val2))
+{
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Rent Change:</td>";
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ 
+val2 = output.val2;
+
+if( (val2 == ""))
+{
+ html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Rent Change:</td>";
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+  negr = output.negrentimg;
+
+ if(parseInt(negr) ==  1)
+ {
+  imgn = output.imgn;
+
+
+  html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Rent Change:<img src='"+imgn+"'/></td><td class='l1'>"+val2+"</td></tr>";
+ }
+
+ else if(parseInt(negr) == 0)
+  { 
+  imgp = output.imgp;
+
+   html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;30 Days Rent Change:<img src='"+imgp+"'/></td><td class='l1'>"+val2+"</td></tr>"; 
+  }
+}
+}
+
+
+html_text = html_text+"<tr><td>Tax Assessment:</td>";
+if(!(output.ass))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ 
+ass = output.ass;
+
+if( (ass == ""))
+{
+ html_text = html_text+"<td class='l1'>N/A</td>";
+}
+
+else
+{
+ html_text = html_text+"<td class='l1'>"+ass+"</td>";
+}
+}
+
+
+html_text = html_text+"<td>&nbsp;&nbsp;&nbsp;&nbsp;All Time Rent Range: </td>";
+if(!(output.low2))
+{
+ html_text = html_text+"<td class='l1'>N/A</td></tr>";
+}
+
+else
+{
+ 
+low2 = output.low2;
+high2 = output.high2;
+
+
+if( (low2 == "") || (high2 == ""))
+{
+ html_text+= "<td class='l1'>N/A</td></tr>";
+
+}
+
+else
+{
+ html_text+= "<td class='l1'>"+low2+" - "+high2+"</td></tr>";
+}
+}
+
+
+html_text+= "</table></div>";
+
+
+
+          html_text+= "</div>";
+
+          html_text+=  "<div role='tabpanel' class='tab-pane' id='historical' >";
+
+          html_text+="<div id='carousel-example-generic' class='carousel slide' data-ride='carousel' >";
+      
+          html_text+="<ol class='carousel-indicators'>";
+          html_text+="<li data-target='#carousel-example-generic' data-slide-to='0' class='active'></li>"
+          html_text+="<li data-target='#carousel-example-generic' data-slide-to='1'</li>";
+          html_text+="<li data-target='#carousel-example-generic' data-slide-to='2'></li>";
+          html_text+="</ol>";
+
+          html_text+="<div class='carousel-inner' role='istbox'>";
+          html_text+="<div class='item active' >";
+
+          chart1 = output.chart1url;
+          html_text+="<div style='text-align: center'><img src='"+chart1+"' alt='1 Year' id='chrt1'></div>";
+          html_text+="<div class='carousel-caption'>";
+          
+          html_text+="<h3>Historical Zestimates for the past 1 year </h3>";
+          html_text+= street+", "+city+", "+state+"-"+zipCode;
+          html_text+="</div>";
+          html_text+= "</div>";
+
+          chart5 = output.chart5url;
+
+          html_text+="<div class='item'>";
+          html_text+="<div style='text-align: center'><img src='"+chart5+"' alt='5 Years' id='chrt5'></div>";
+          html_text+="<div class='carousel-caption'>";
+          
+          html_text+="<h3>Historical Zestimates for the past 5 years </h3>";
+          html_text+= street+", "+city+", "+state+"-"+zipCode;
+          html_text+="</div>";
+          html_text+="</div>";
+
+
+          chart10 = output.chart10url;
+
+          html_text+="<div class='item'>";
+          html_text+="<div style='text-align: center'><img src='"+chart10+"' alt='10 Years'id='chrt10'></div>";
+          html_text+="<div class='carousel-caption' >";
+          html_text+="<h3>Historical Zestimates for the past 10 years </h3>";
+          html_text+= street+", "+city+", "+state+"-"+zipCode;
+          html_text+="</div>";
+          html_text+="</div>";
+            
+
+      
+        html_text+="<a class='left carousel-control' href='#carousel-example-generic' role='button' data-slide='prev'>";
+        html_text+="<span class='glyphicon glyphicon-chevron-left'></span>";
+        html_text+="<span class='sr-only'>Previous</span>";
+        html_text+="</a>";
+        html_text+="<a class='right carousel-control' href='#carousel-example-generic' role='button' data-slide='next'>";
+        html_text+="<span class='glyphicon glyphicon-chevron-right'></span>";
+        html_text+= "<span class='sr-only'>Next</span>";
+        html_text+="</a>";
+        html_text+="</div>";
+
+        html_text+= "</div> </div><br/>";
+
+
+          html_text+= "<footer>&copy; Zillow, Inc., 2006-2014. Use is subject to <a href='http://www.zillow.com/corp/Terms.htm'>Terms of Use </a> <br/>";
+          html_text+= "<a href='http://www.zillow.com/zestimate/'>What's a Zestimate? </a></footer>";
+
+}    
+        
+
+          document.getElementById("results").innerHTML = html_text;
+       
+
+            
+            },
+            error: function(){
+              html_text = "<br/><center><h3 id='nomatch' style='color:red;'>No exact match found -- Verify that the given address is correct </h3></center>";
+           
+
+             document.getElementById("results").innerHTML = html_text; 
+
+            }
+           });
+
+          
+        }
+ 
+ });
+
+});
+
+</script>
+
+</head>
+
+<body>
+
+
+<div id="fb-root"></div>
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '404977682984569',
+      xfbml      : true,
+      version    : 'v2.2'
+    });
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<script>
+
+function fb_post(){ 
+
+  o = JSON.parse($("#jsondata").val());
+    
+  var neg =  o.negzestimg;
+  street1 =  o.street;
+  state1 = o.state;
+  city1 = o.city;
+  zipcode1 = o.zipcode;
+  homeLink1 = o.homedetails;
+  soldprice1 = o.price;
+  chart11 = o.chart1url;
+  
+  var val;
+  if (neg == 1){ 
+     val1 = "-"+o.val;
+   } 
+  
+  else{
+     val1 = "+"+o.val;
+   }
+
+   nm = street1+", "+city1+", "+state1+"-"+zipcode1;
+   desc = "Last Sold Price: "+soldprice1+", 30 Days Overall Change: "+val1 ;
+
+FB.ui(
+{ 
+  method: 'feed',
+  display: "popup",
+  name: nm,
+  link: homeLink1,
+  picture: chart11,
+  caption: 'Property Information from Zillow.com',
+  description: desc
+    },
+
+ function(response){
+  if(response && response.post_id){
+     alert("Posted Successfully");
+   } 
+
+   else { 
+    alert("Not Posted");
+     } 
+  });
+
+}
+
+</script>
+
+<h3 id="searchprop"> Search Your Property Here </h3>
+<br/>
+<form method="POST" id="myform" name="myform" action="">
+<table>
+<tr>
+<td> <label for="street">Street Address*: </label>&nbsp; </td>
+<td> <input type = "text" id="street" name="street" class="form-group"> &nbsp;&nbsp;&nbsp;</td>
+<td> <label for="city">City*:</label>&nbsp; </td>
+<td> <input type = "text" name="city" id="city" class="form-group">&nbsp;&nbsp;&nbsp;</td>
+<td> <label for="state">State*:</label> &nbsp;</td>
+<td> <select id="state" name="state" size="1" class="form-group">
+        <option value="">Select</option>
+	<option value="AK">AK</option>
+
+	<option value="AL">AL</option>
+	<option value="AR">AR</option>
+	<option value="AZ">AZ</option>
+	<option value="CA">CA</option>
+
+	<option value="CO">CO</option>
+	<option value="CT">CT</option>
+	<option value="DC">DC</option>
+	<option value="DE">DE</option>
+
+	<option value="FL">FL</option>
+	<option value="GA">GA</option>
+	<option value="HI">HI</option>
+	<option value="IA">IA</option>
+
+	<option value="ID">ID</option>
+	<option value="IL">IL</option>
+	<option value="IN">IN</option>
+	<option value="KS">KS</option>
+
+	<option value="KY">KY</option>
+	<option value="LA">LA</option>
+	<option value="MA">MA</option>
+	<option value="MD">MD</option>
+
+	<option value="ME">ME</option>
+	<option value="MI">MI</option>
+	<option value="MN">MN</option>
+	<option value="MO">MO</option>
+
+	<option value="MS">MS</option>
+	<option value="MT">MT</option>
+	<option value="NC">NC</option>
+	<option value="ND">ND</option>
+
+	<option value="NE">NE</option>
+	<option value="NH">NH</option>
+	<option value="NJ">NJ</option>
+	<option value="NM">NM</option>
+
+	<option value="NV">NV</option>
+	<option value="NY">NY</option>
+	<option value="OH">OH</option>
+	<option value="OK">OK</option>
+
+	<option value="OR">OR</option>
+	<option value="PA">PA</option>
+	<option value="RI">RI</option>
+	<option value="SC">SC</option>
+
+	<option value="SD">SD</option>
+	<option value="TN">TN</option>
+	<option value="TX">TX</option>
+	<option value="UT">UT</option>
+
+	<option value="VA">VA</option>
+	<option value="VT">VT</option>
+	<option value="WA">WA</option>
+	<option value="WI">WI</option>
+
+	<option value="WV">WV</option>
+	<option value="WY">WY</option>
+</select> 
+&nbsp;&nbsp;&nbsp;&nbsp; 
+</td>
+<td>
+<input type="submit" id="submit" name="submit" value="Submit" class="form-group"> </td>
+
+</td>
+<img align="right" src="http://www.zillow.com/widgets/GetVersionedResource.htm?path=/static/logos/Zillowlogo_150x40_rounded.gif" width="150" height="40" alt="Zill0ow Real Estate Search" />
+</td>
+</tr>
+
+
+<tr>
+<td> </td>
+<td> <div id="streeterror" class="myerrors" > </div> </td>
+<td> </td>
+<td> <div id="cityerror" class="myerrors" > </div> </td>
+<td> </td>
+<td> <div id="stateerror" class="myerrors" > </div> </td>
+</tr>
+
+</table>
+<input type="hidden" id="jsondata">;
+
+</form>
+<br/>
+<br/>
+<br/>
+<br/>
+<hr>
+
+<div id="results">
+
+</div>
+
+</body>
+</html>
